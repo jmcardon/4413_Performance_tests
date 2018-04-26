@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BookStoreLoadTest {
+public class BookStoreConcurrentLoadTest {
 
     private static class Result {
         long timeReturned;
@@ -83,25 +83,10 @@ public class BookStoreLoadTest {
             System.out.println("Successfully shut down");
         }
 
-        public ConcurrentLinkedQueue<Optional<Result>> run(String url, Instant endTime) {
+        public ConcurrentLinkedQueue<Optional<Result>> run(String url) {
             for (int i = 0; i < maxConcurrent; i++) {
                 submit(url);
             }
-            int currentInFlight = 0;
-            int j;
-            int diff;
-            System.out.println("Submitted all initial requests");
-
-            while (Instant.now().isBefore(endTime)) {
-                currentInFlight = inFlight.get();
-                if (currentInFlight < maxConcurrent) {
-                    diff = maxConcurrent - currentInFlight;
-                    for (j = 0; j < diff; j++) {
-                        submit(url);
-                    }
-                }
-            }
-
             System.out.println("Waiting on remaining requests");
             //Wait until all requests are served
             while (inFlight.get() != 0) {
@@ -120,12 +105,12 @@ public class BookStoreLoadTest {
     }
 
     public static void main(String[] args) throws IOException {
-        int maxConcurrent = 10;
+        int maxConcurrent = 100;
         LoadTestRunner runner = new LoadTestRunner(maxConcurrent);
 
         long start = System.currentTimeMillis();
         ConcurrentLinkedQueue<Optional<Result>> results =
-                runner.run("http://localhost:8080/bookStore/getProductInfoTest?bookId=b001", Instant.now().plusSeconds(5));
+                runner.run("http://localhost:8080/bookStore/getProductInfoTest?bookId=b001");
         long stop = System.currentTimeMillis();
         long totalTimeSeconds = (stop - start)/1000;
 
@@ -141,7 +126,7 @@ public class BookStoreLoadTest {
             out.add(s.status + "," + s.timeReturned + "," + s.latency);
         }
         System.out.println("Successful " + outList.size());
-        Path outFile = Paths.get("/home/jose/latency_results.csv");
+        Path outFile = Paths.get("/home/jose/latency_results_concurent.csv");
         outFile.toFile().createNewFile();
         try {
             Files.write(outFile, out, StandardCharsets.UTF_8);
