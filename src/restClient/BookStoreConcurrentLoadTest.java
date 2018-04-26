@@ -105,7 +105,7 @@ public class BookStoreConcurrentLoadTest {
     }
 
     public static void main(String[] args) throws IOException {
-        int maxConcurrent = 100;
+        int maxConcurrent = 1000;
         LoadTestRunner runner = new LoadTestRunner(maxConcurrent);
 
         long start = System.currentTimeMillis();
